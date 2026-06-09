@@ -1,0 +1,24 @@
+<resources>
+
+    <style name="AppTheme" parent="AppTheme.Base" />
+
+    <style name="DialpadButtonStyle">
+        <item name="android:background">@drawable/dialpad_btn_bg</item>
+        <item name="android:layout_marginStart">@dimen/small_margin</item>
+        <item name="android:layout_marginEnd">@dimen/small_margin</item>
+        <item name="android:layout_marginBottom">@dimen/small_margin</item>
+    </style>
+
+    <style name="DialpadNumberStyle">
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:textSize">@dimen/dialpad_text_size</item>
+        <item name="android:layout_centerHorizontal">true</item>
+    </style>
+
+    <style name="DialpadLetterStyle">
+        <item name="android:textSize">@dimen/dialpad_letters_text_size</item>
+        <item name="android:alpha">0.8</item>
+        <item name="android:layout_centerHorizontal">true</item>
+    </style>
+
+</resources>
