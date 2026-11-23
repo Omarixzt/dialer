@@ -33,90 +33,10 @@
         android:textSize="@dimen/bigger_text_size"
         android:visibility="gone" />
 
-    <HorizontalScrollView
-        android:id="@+id/recents_filters_scroll"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none"
-        android:clipToPadding="false"
-        android:paddingStart="@dimen/medium_margin"
-        android:paddingEnd="@dimen/medium_margin"
-        android:paddingTop="@dimen/small_margin"
-        android:paddingBottom="@dimen/small_margin">
-
-        <RadioGroup
-            android:id="@+id/recents_filter_group"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <RadioButton
-                android:id="@+id/filter_all"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/filter_pill_selector"
-                android:button="@null"
-                android:checked="true"
-                android:paddingStart="@dimen/medium_margin"
-                android:paddingEnd="@dimen/medium_margin"
-                android:paddingTop="@dimen/small_margin"
-                android:paddingBottom="@dimen/small_margin"
-                android:text="الكل"
-                android:textColor="@color/filter_pill_text_selector"
-                android:textSize="@dimen/normal_text_size" />
-
-            <RadioButton
-                android:id="@+id/filter_missed"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/small_margin"
-                android:background="@drawable/filter_pill_selector"
-                android:button="@null"
-                android:paddingStart="@dimen/medium_margin"
-                android:paddingEnd="@dimen/medium_margin"
-                android:paddingTop="@dimen/small_margin"
-                android:paddingBottom="@dimen/small_margin"
-                android:text="لم يرد عليها"
-                android:textColor="@color/filter_pill_text_selector"
-                android:textSize="@dimen/normal_text_size" />
-
-            <RadioButton
-                android:id="@+id/filter_outgoing"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/small_margin"
-                android:background="@drawable/filter_pill_selector"
-                android:button="@null"
-                android:paddingStart="@dimen/medium_margin"
-                android:paddingEnd="@dimen/medium_margin"
-                android:paddingTop="@dimen/small_margin"
-                android:paddingBottom="@dimen/small_margin"
-                android:text="صادرة"
-                android:textColor="@color/filter_pill_text_selector"
-                android:textSize="@dimen/normal_text_size" />
-
-            <RadioButton
-                android:id="@+id/filter_incoming"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/small_margin"
-                android:background="@drawable/filter_pill_selector"
-                android:button="@null"
-                android:paddingStart="@dimen/medium_margin"
-                android:paddingEnd="@dimen/medium_margin"
-                android:paddingTop="@dimen/small_margin"
-                android:paddingBottom="@dimen/small_margin"
-                android:text="مستلمة"
-                android:textColor="@color/filter_pill_text_selector"
-                android:textSize="@dimen/normal_text_size" />
-        </RadioGroup>
-    </HorizontalScrollView>
-
     <org.fossify.commons.views.MyRecyclerView
         android:id="@+id/recents_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/recents_filters_scroll"
         android:clipToPadding="false"
         android:layoutAnimation="@anim/layout_animation"
         android:paddingBottom="@dimen/recyclerview_fab_padding"

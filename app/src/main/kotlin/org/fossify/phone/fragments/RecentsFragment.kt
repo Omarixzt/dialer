@@ -42,7 +42,6 @@ class RecentsFragment(
     private var recentsAdapter: RecentCallsAdapter? = null
 
     private var searchQuery: String? = null
-    private var currentFilterType: Int = 0 // 0: All, 1: Missed, 2: Outgoing, 3: Incoming
     private var recentsHelper = RecentsHelper(context)
 
     override fun onFinishInflate() {
@@ -64,16 +63,6 @@ class RecentsFragment(
             setOnClickListener {
                 requestCallLogPermission()
             }
-        }
-
-        binding.recentsFilterGroup.setOnCheckedChangeListener { _, checkedId ->
-            currentFilterType = when (checkedId) {
-                R.id.filter_missed -> 1
-                R.id.filter_outgoing -> 2
-                R.id.filter_incoming -> 3
-                else -> 0
-            }
-            updateSearchResult()
         }
     }
 
@@ -113,22 +102,15 @@ class RecentsFragment(
     @Suppress("UNCHECKED_CAST")
     private fun updateSearchResult() {
         ensureBackgroundThread {
-            val fixedText = searchQuery?.trim()?.replace("\\s+".toRegex(), " ") ?: ""
+            val fixedText = searchQuery!!.trim().replace("\\s+".toRegex(), " ")
             val recentCalls = allRecentCalls
                 .filterIsInstance<RecentCall>()
                 .filter {
-                    val searchMatch = fixedText.isEmpty() || it.name.contains(fixedText, true) || it.doesContainPhoneNumber(fixedText)
-                    val filterMatch = when (currentFilterType) {
-                        1 -> it.type == android.provider.CallLog.Calls.MISSED_TYPE || it.type == android.provider.CallLog.Calls.REJECTED_TYPE
-                        2 -> it.type == android.provider.CallLog.Calls.OUTGOING_TYPE
-                        3 -> it.type == android.provider.CallLog.Calls.INCOMING_TYPE
-                        else -> true
-                    }
-                    searchMatch && filterMatch
+                    it.name.contains(fixedText, true) || it.doesContainPhoneNumber(fixedText)
                 }
                 .sortedWith(
                     compareByDescending<RecentCall> { it.dayCode }
-                        .thenByDescending { if (fixedText.isNotEmpty()) it.name.startsWith(fixedText, true) else true }
+                        .thenByDescending { it.name.startsWith(fixedText, true) }
                         .thenByDescending { it.startTS }
                 )
 
@@ -216,7 +198,12 @@ class RecentsFragment(
     private fun refreshCallLog(loadAll: Boolean = false, callback: (() -> Unit)? = null) {
         getRecentCalls(loadAll) {
             allRecentCalls = it
-            updateSearchResult()
+            if (searchQuery.isNullOrEmpty()) {
+                activity?.runOnUiThread { gotRecents(it) }
+            } else {
+                updateSearchResult()
+            }
+
             callback?.invoke()
         }
     }

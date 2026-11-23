@@ -126,7 +126,9 @@ class MainActivity : SimpleActivity() {
         }
 
         updateMenuColors()
-        updateMenuColors()
+        val properPrimaryColor = getProperPrimaryColor()
+        val dialpadIcon = resources.getColoredDrawableWithColor(R.drawable.ic_dialpad_vector, properPrimaryColor.getContrastColor())
+        binding.mainDialpadButton.setImageDrawable(dialpadIcon)
 
         updateTextColors(binding.mainHolder)
         setupTabColors()
@@ -344,24 +346,19 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun setupTabColors() {
+        val activeView = binding.mainTabsHolder.getTabAt(binding.viewPager.currentItem)?.customView
+        updateBottomTabItemColors(activeView, true, getSelectedTabDrawableIds()[binding.viewPager.currentItem])
+
+        getInactiveTabIndexes(binding.viewPager.currentItem).forEach { index ->
+            val inactiveView = binding.mainTabsHolder.getTabAt(index)?.customView
+            updateBottomTabItemColors(inactiveView, false, getDeselectedTabDrawableIds()[index])
+        }
+
         val bottomBarColor = getBottomNavigationBackgroundColor()
         binding.mainTabsHolder.setBackgroundColor(bottomBarColor)
-        
-        val colorStateList = android.content.res.ColorStateList(
-            arrayOf(
-                intArrayOf(android.R.attr.state_checked),
-                intArrayOf(-android.R.attr.state_checked)
-            ),
-            intArrayOf(
-                getProperPrimaryColor(),
-                getProperTextColor()
-            )
-        )
-        binding.mainTabsHolder.itemIconTintList = colorStateList
-        binding.mainTabsHolder.itemTextColor = colorStateList
     }
 
-    private fun getInactiveTabIndexes(activeIndex: Int) = (0 until binding.mainTabsHolder.menu.size()).filter { it != activeIndex }
+    private fun getInactiveTabIndexes(activeIndex: Int) = (0 until binding.mainTabsHolder.tabCount).filter { it != activeIndex }
 
     private fun getSelectedTabDrawableIds(): List<Int> {
         val showTabs = config.showTabs
@@ -402,14 +399,14 @@ class MainActivity : SimpleActivity() {
     }
 
     private fun initFragments() {
-        binding.viewPager.offscreenPageLimit = 3
+        binding.viewPager.offscreenPageLimit = 2
         binding.viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
             override fun onPageScrollStateChanged(state: Int) {}
 
             override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
 
             override fun onPageSelected(position: Int) {
-                binding.mainTabsHolder.menu.getItem(position).isChecked = true
+                binding.mainTabsHolder.getTabAt(position)?.select()
                 getAllFragments().forEach {
                     it?.finishActMode()
                 }
@@ -417,37 +414,66 @@ class MainActivity : SimpleActivity() {
             }
         })
 
+        // selecting the proper tab sometimes glitches, add an extra selector to make sure we have it right
+        binding.mainTabsHolder.onGlobalLayout {
+            Handler().postDelayed({
+                var wantedTab = getDefaultTab()
+
+                // open the Recents tab if we got here by clicking a missed call notification
+                if (intent.action == Intent.ACTION_VIEW && config.showTabs and TAB_CALL_HISTORY > 0) {
+                    wantedTab = binding.mainTabsHolder.tabCount - 1
+                }
+
+                binding.mainTabsHolder.getTabAt(wantedTab)?.select()
+                refreshMenuItems()
+            }, 100L)
+        }
+
+        binding.mainDialpadButton.setOnClickListener {
+            launchDialpad()
+        }
+
         binding.viewPager.onGlobalLayout {
             refreshMenuItems()
         }
 
         if (config.openDialPadAtLaunch && !launchedDialer) {
-            binding.viewPager.currentItem = 0
+            launchDialpad()
             launchedDialer = true
         }
     }
 
     private fun setupTabs() {
         binding.viewPager.adapter = null
-        
-        binding.mainTabsHolder.setOnItemSelectedListener { item ->
-            val position = when (item.itemId) {
-                R.id.tab_dialpad -> 0
-                R.id.tab_recents -> 1
-                R.id.tab_favorites -> 2
-                R.id.tab_contacts -> 3
-                else -> 0
+        binding.mainTabsHolder.removeAllTabs()
+        tabsList.forEachIndexed { index, value ->
+            if (config.showTabs and value != 0) {
+                binding.mainTabsHolder.newTab().setCustomView(R.layout.bottom_tablayout_item).apply {
+                    customView?.findViewById<ImageView>(R.id.tab_item_icon)?.setImageDrawable(getTabIcon(index))
+                    customView?.findViewById<TextView>(R.id.tab_item_label)?.text = getTabLabel(index)
+                    AutofitHelper.create(customView?.findViewById(R.id.tab_item_label))
+                    binding.mainTabsHolder.addTab(this)
+                }
             }
-            
-            getCurrentFragment()?.onSearchQueryChanged(binding.mainMenu.getCurrentQuery())
-            binding.viewPager.currentItem = position
-            
-            if (position == 1 && config.showTabs and TAB_CALL_HISTORY > 0) {
-                clearMissedCalls()
-            }
-            true
         }
 
+        binding.mainTabsHolder.onTabSelectionChanged(
+            tabUnselectedAction = {
+                updateBottomTabItemColors(it.customView, false, getDeselectedTabDrawableIds()[it.position])
+            },
+            tabSelectedAction = {
+                getCurrentFragment()?.onSearchQueryChanged(binding.mainMenu.getCurrentQuery())
+                binding.viewPager.currentItem = it.position
+                updateBottomTabItemColors(it.customView, true, getSelectedTabDrawableIds()[it.position])
+
+                val lastPosition = binding.mainTabsHolder.tabCount - 1
+                if (it.position == lastPosition && config.showTabs and TAB_CALL_HISTORY > 0) {
+                    clearMissedCalls()
+                }
+            }
+        )
+
+        binding.mainTabsHolder.beGoneIf(binding.mainTabsHolder.tabCount == 1)
         storedShowTabs = config.showTabs
         storedStartNameWithSurname = config.startNameWithSurname
     }
@@ -498,24 +524,31 @@ class MainActivity : SimpleActivity() {
 
     fun refreshFragments() {
         cacheContacts()
-        getDialpadFragment()?.refreshItems()
         getContactsFragment()?.refreshItems()
         getFavoritesFragment()?.refreshItems()
         getRecentsFragment()?.refreshItems()
     }
 
     private fun getAllFragments(): ArrayList<MyViewPagerFragment<*>?> {
+        val showTabs = config.showTabs
         val fragments = arrayListOf<MyViewPagerFragment<*>?>()
-        fragments.add(getDialpadFragment())
-        fragments.add(getRecentsFragment())
-        fragments.add(getFavoritesFragment())
-        fragments.add(getContactsFragment())
+
+        if (showTabs and TAB_CONTACTS > 0) {
+            fragments.add(getContactsFragment())
+        }
+
+        if (showTabs and TAB_FAVORITES > 0) {
+            fragments.add(getFavoritesFragment())
+        }
+
+        if (showTabs and TAB_CALL_HISTORY > 0) {
+            fragments.add(getRecentsFragment())
+        }
+
         return fragments
     }
 
     private fun getCurrentFragment(): MyViewPagerFragment<*>? = getAllFragments().getOrNull(binding.viewPager.currentItem)
-
-    private fun getDialpadFragment(): org.fossify.phone.fragments.DialpadFragment? = findViewById(R.id.dialpad_fragment)
 
     private fun getContactsFragment(): ContactsFragment? = findViewById(R.id.contacts_fragment)
 
@@ -526,7 +559,7 @@ class MainActivity : SimpleActivity() {
     private fun getDefaultTab(): Int {
         val showTabsMask = config.showTabs
         return when (config.defaultTab) {
-            TAB_LAST_USED -> if (config.lastUsedViewPagerPage < binding.mainTabsHolder.menu.size()) config.lastUsedViewPagerPage else 0
+            TAB_LAST_USED -> if (config.lastUsedViewPagerPage < binding.mainTabsHolder.tabCount) config.lastUsedViewPagerPage else 0
             TAB_CONTACTS -> 0
             TAB_FAVORITES -> if (showTabsMask and TAB_CONTACTS > 0) 1 else 0
             else -> {

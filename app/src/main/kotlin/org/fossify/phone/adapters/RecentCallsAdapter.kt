@@ -525,23 +525,29 @@ class RecentCallsAdapter(
                     setTextColor(textColor)
                     setTextSize(TypedValue.COMPLEX_UNIT_PX, currentFontSize)
                     isSelected = true
-                }
-
-                itemRecentsSocialIcon.apply {
-                    val drawable = activity.resources.getDrawable(android.R.drawable.sym_action_chat, activity.theme).mutate()
-                    var showIcon = true
-                    when (call.specificType.lowercase()) {
-                        "whatsapp" -> drawable.setTint(android.graphics.Color.parseColor("#25D366"))
-                        "telegram" -> drawable.setTint(android.graphics.Color.parseColor("#0088cc"))
-                        "messenger" -> drawable.setTint(android.graphics.Color.parseColor("#00B2FF"))
-                        "instagram" -> drawable.setTint(android.graphics.Color.parseColor("#C13584"))
-                        else -> showIcon = false
-                    }
-                    if (showIcon) {
-                        setImageDrawable(drawable)
-                        visibility = View.VISIBLE
+                    
+                    if (call.specificType.lowercase() == "whatsapp") {
+                        val drawable = activity.resources.getDrawable(android.R.drawable.sym_action_chat, activity.theme).mutate()
+                        drawable.setTint(android.graphics.Color.parseColor("#25D366"))
+                        setCompoundDrawablesWithIntrinsicBounds(null, null, drawable, null)
+                        compoundDrawablePadding = 12
+                    } else if (call.specificType.lowercase() == "telegram") {
+                        val drawable = activity.resources.getDrawable(android.R.drawable.sym_action_chat, activity.theme).mutate()
+                        drawable.setTint(android.graphics.Color.parseColor("#0088cc"))
+                        setCompoundDrawablesWithIntrinsicBounds(null, null, drawable, null)
+                        compoundDrawablePadding = 12
+                    } else if (call.specificType.lowercase() == "messenger") {
+                        val drawable = activity.resources.getDrawable(android.R.drawable.sym_action_chat, activity.theme).mutate()
+                        drawable.setTint(android.graphics.Color.parseColor("#00B2FF")) // Messenger gradient approx
+                        setCompoundDrawablesWithIntrinsicBounds(null, null, drawable, null)
+                        compoundDrawablePadding = 12
+                    } else if (call.specificType.lowercase() == "instagram") {
+                        val drawable = activity.resources.getDrawable(android.R.drawable.sym_action_chat, activity.theme).mutate()
+                        drawable.setTint(android.graphics.Color.parseColor("#C13584")) // Instagram pink/purple approx
+                        setCompoundDrawablesWithIntrinsicBounds(null, null, drawable, null)
+                        compoundDrawablePadding = 12
                     } else {
-                        visibility = View.GONE
+                        setCompoundDrawablesWithIntrinsicBounds(null, null, null, null)
                     }
                 }
 

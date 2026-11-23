@@ -85,9 +85,4 @@ abstract class MyViewPagerFragment<BINDING : MyViewPagerFragment.InnerBinding>(c
         override val fragmentList = null
         override val recentsList = binding.recentsList
     }
-
-    class DialpadInnerBinding(val binding: org.fossify.phone.databinding.FragmentDialpadMainBinding) : InnerBinding {
-        override val fragmentList: MyRecyclerView = binding.dialpadList
-        override val recentsList = null
-    }
 }
